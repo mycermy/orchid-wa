@@ -39,6 +39,10 @@ class PlatformProvider extends OrchidServiceProvider
                 ->title('Navigation')
                 ->route(config('platform.index')),
 
+            Menu::make('Whatsapp Devices')
+                ->icon('bs.book')
+                ->route('platform.whatsapp.devices'),
+
             Menu::make('Example Screen')
                 ->icon('bs.collection')
                 ->route('platform.example')
@@ -100,6 +104,9 @@ class PlatformProvider extends OrchidServiceProvider
             ItemPermission::group(__('System'))
                 ->addPermission('platform.systems.roles', __('Roles'))
                 ->addPermission('platform.systems.users', __('Users')),
+
+            ItemPermission::group(__('Whatsapp Management'))
+                ->addPermission('platform.whatsapp.index',__('Devices')),
         ];
     }
 }

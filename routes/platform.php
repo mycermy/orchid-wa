@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Orchid\Screens\Devices;
 use App\Orchid\Screens\Examples\ExampleActionsScreen;
 use App\Orchid\Screens\Examples\ExampleCardsScreen;
 use App\Orchid\Screens\Examples\ExampleChartsScreen;
@@ -16,6 +17,9 @@ use App\Orchid\Screens\Role\RoleListScreen;
 use App\Orchid\Screens\User\UserEditScreen;
 use App\Orchid\Screens\User\UserListScreen;
 use App\Orchid\Screens\User\UserProfileScreen;
+use App\Orchid\Screens\wa\Devices_EditScreen;
+use App\Orchid\Screens\wa\Devices_ListScreen;
+use App\Orchid\Screens\wa\Devices_ScanScreen;
 use Illuminate\Support\Facades\Route;
 use Tabuna\Breadcrumbs\Trail;
 
@@ -100,3 +104,7 @@ Route::screen('/charts/examples/charts', ExampleChartsScreen::class)->name('plat
 Route::screen('/cards/examples/cards', ExampleCardsScreen::class)->name('platform.example.cards');
 
 //Route::screen('idea', Idea::class, 'platform.screens.idea');
+Route::screen('wa/devices',Devices_ListScreen::class)->name('platform.whatsapp.devices');
+Route::screen('wa/devices/create',Devices_EditScreen::class)->name('platform.whatsapp.devices.create');
+Route::screen('wa/devices/{device}/edit',Devices_EditScreen::class)->name('platform.whatsapp.devices.edit');
+Route::screen('wa/devices/{device}/scan',Devices_ScanScreen::class)->name('platform.whatsapp.devices.scan');
