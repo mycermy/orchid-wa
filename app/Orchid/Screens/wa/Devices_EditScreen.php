@@ -12,10 +12,11 @@ use Orchid\Support\Facades\Toast;
 use Orchid\Support\Facades\Layout;
 use Illuminate\Support\Facades\Http;
 use App\Orchid\Layouts\wa\Devices_FieldLayout;
+use Orchid\Support\Facades\Alert;
 
 class Devices_EditScreen extends Screen
 {
-    public $device;
+    public $device, $resDeviceStatus;
     /**
      * Fetch data to be displayed on the screen.
      *
@@ -25,51 +26,65 @@ class Devices_EditScreen extends Screen
     {
         $image = '';
         $reloadpage = '';
+        $resDeviceStatus = false;
 
         if ($device->exists) {
-            // device session ready?
-            $find = Http::get(env('URL_WA_SERVER').'/sessions/'.$device->name.'/status');
-            $resDevice = json_decode($find->getBody());
-            // dd($resDevice);
-
-            # code...
-            // +"error": "Session not found"
-            // if (isset($res->error) && $res->error == "Session not found") {
-            //     # code...
-            // }
-            if (isset($resDevice->status) && $resDevice->status == "AUTHENTICATED") {
-                $image = asset('image/connect.gif');
-                $reloadpage = '';
-                if ($device->status != $resDevice->status) {
-                    # code...
-                    $device->update(['status' => $resDevice->status]);
-                }
-            } else {
-                // add session
-                $response = Http::post(env('URL_WA_SERVER').'/sessions/add', ['sessionId' => $device->name]);
-                $res = json_decode($response->getBody());
-                // dd($res->qr);
-
-                // +"error": "Session already exists"
-                if (isset($res->error) && $res->error == "Session already exists") {
-                    $hapus = Http::delete(env('URL_WA_SERVER').'/sessions/'.$device->name);
-                    sleep(1);
-                    //ulang qr
-                    $response = Http::post(env('URL_WA_SERVER').'/sessions/add', ['sessionId' => $device->name]);
-                    $res = json_decode($response->getBody()); // dd($res);
-                }
-
-                $image = $res->qr; //dd($res);
-                $reloadpage = 'setTimeout(function(){window.location.reload(1);}, 20000);';
-
+            try {
+                // device session ready?
                 $find = Http::get(env('URL_WA_SERVER').'/sessions/'.$device->name.'/status');
                 $resDevice = json_decode($find->getBody());
                 // dd($resDevice);
-                if (isset($resDevice->status)) {
-                    # code...
-                    $device->update(['status' => $resDevice->status]);
+                // +"error": "Session not found"
+                // if (isset($res->error) && $res->error == "Session not found") {
+                //     # code...
+                // }
+                if (isset($resDevice->status) && $resDevice->status == "AUTHENTICATED") {
+                    $image = asset('image/connect.gif');
+                    $reloadpage = '';
+                    $resDeviceStatus = true;
+                    if ($device->status != $resDevice->status) {
+                        # code...
+                        $device->update(['status' => $resDevice->status]);
+                    }
+                } else {
+                    // add session
+                    $response = Http::post(env('URL_WA_SERVER').'/sessions/add', ['sessionId' => $device->name]);
+                    $res = json_decode($response->getBody());
+                    // dd($res->qr);
+
+                    // +"error": "Session already exists"
+                    if (isset($res->error) && $res->error == "Session already exists") {
+                        $hapus = Http::delete(env('URL_WA_SERVER').'/sessions/'.$device->name);
+                        sleep(1);
+                        //ulang qr
+                        $response = Http::post(env('URL_WA_SERVER').'/sessions/add', ['sessionId' => $device->name]);
+                        $res = json_decode($response->getBody()); // dd($res);
+                    }
+
+                    $image = $res->qr; //dd($res);
+                    $reloadpage = 'setTimeout(function(){window.location.reload(1);}, 20000);';
+
+                    $find = Http::get(env('URL_WA_SERVER').'/sessions/'.$device->name.'/status');
+                    $resDevice = json_decode($find->getBody());
+                    // dd($resDevice);
+                    if (isset($resDevice->status)) {
+                        # code...
+                        $device->update(['status' => $resDevice->status]);
+                    }
                 }
+
+                # code...
+                if (!$find->successful()) {
+                    # code...
+                    $find->throw();
+                }
+            } catch (\Throwable $th) {
+                //throw $th;
+                $resDevice = json_decode($th->getMessage());
+                // dd($resDevice);
+                Alert::error(__('WhatsApp server not found.'));
             }
+
         } else {
             # code...
         }
@@ -77,6 +92,7 @@ class Devices_EditScreen extends Screen
 
         return [
             'device' => $device,
+            'resDeviceStatus' => $resDeviceStatus,
             'waqr' => $image,
             'script_js' => $reloadpage
         ];
@@ -114,7 +130,7 @@ class Devices_EditScreen extends Screen
 
             Button::make(__('Unlink'))
                 ->icon('bs.whatsapp')
-                ->canSee($this->device->status == 'AUTHENTICATED')
+                ->canSee($this->device->status == 'AUTHENTICATED' && $this->resDeviceStatus)
                 ->method('unlinkDevice'),
 
             Link::make(__('Cancel'))
